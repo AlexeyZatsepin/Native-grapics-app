@@ -1,17 +1,20 @@
 package com.example.hellojni;
 
-import android.app.Activity;
+import android.app.NativeActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
+    private final String TAG = "CurrView";
     private GLSurfaceView glSurfaceView;
-    private boolean rendererSet;
 
 
     @Override
@@ -38,23 +41,43 @@ public class MainActivity extends Activity {
                 NativeRenderer.on_draw_frame();
             }
         });
-        rendererSet = true;
         setContentView(glSurfaceView);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        if (rendererSet) {
-            glSurfaceView.onPause();
-        }
+        glSurfaceView.onPause();
+        NativeRenderer.clean();
+
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (rendererSet) {
-            glSurfaceView.onResume();
-        }
+        glSurfaceView.onResume();
+        NativeRenderer.init(getAssets());
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        NativeRenderer.clean();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.main) {
+
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 }

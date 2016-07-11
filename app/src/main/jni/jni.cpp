@@ -1,31 +1,21 @@
 #include <jni.h>
-#include <GLES2/gl2.h>
+#include <GLES3/gl3.h>
 #include <android/asset_manager_jni.h>
 #include <string>
 #include <assert.h>
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
-#include <vector>
 #include <android/log.h>
 
-#define  LOG_TAG    "opengl_test"
+#define  LOG_TAG    "NATIVE_LOG"
 #define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 using std::string;
 
-GLfloat vVertices[] = {
-        0.0f, 0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-        0.5f,-0.5f, 0.0f
-};
-GLfloat vColors[] = {
-        1.0f,1.0f,0.0f,
-        0.0f,1.0f,0.0f,
-        0.0f,0.0f,1.0f
-};
-
+GLfloat * vVertices;
+GLfloat * vColors;
 
 std::string vertexShaderSource;
 std::string fragmentShaderSource;
@@ -33,12 +23,43 @@ std::string fragmentShaderSource;
 GLuint shaderProgram;
 
 glm::mat4 ProjectionMatrix;
-glm::mat4 ViewMatrix = glm::lookAt(
+glm::mat4 ViewMatrix;
+glm::mat4 ModelMatrix;
+
+void prepareData(){
+    vVertices = new GLfloat[18]{
+            0.5f,  0.5f, 0.0f,
+            -0.5f, -0.5f, 0.0f,
+            0.5f, -0.5f, 0.0f,
+
+            0.5f,  0.5f , 0.0f,
+            -0.5f, -0.5f , 0.0f,
+            -0.5f,  0.5f , 0.0f,
+
+    };
+    vColors = new GLfloat[18]{
+            1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f,
+            0.0f, 1.0f, 0.0f,
+            1.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 1.0f,
+    };
+}
+void clean(){
+    delete vVertices;
+    delete vColors;
+}
+void createModelMatrix(){
+    ModelMatrix = glm::mat4(1.0);
+}
+void createViewMatrix(){
+    ViewMatrix = glm::lookAt(
             glm::vec3(0.0f, 0.0f, 5.0f),
             glm::vec3(0.0f, 0.0f, 0.0f),
             glm::vec3(0.0f, 1.0f, 0.0f)
-);
-glm::mat4 ModelMatrix = glm::mat4(1.0);
+    );
+}
 
 void loadSources(AAssetManager *assetManager) {
         AAsset *vertexShaderAsset = AAssetManager_open(assetManager, "vertex_shader.glsl",
@@ -95,40 +116,42 @@ GLuint createProgram(const std::string& pVertexSource, const std::string& pFragm
 
 
 void init(AAssetManager *nativeAssetManager){
+    prepareData();
+    createModelMatrix();
+    createViewMatrix();
     loadSources(nativeAssetManager);
     shaderProgram = createProgram(vertexShaderSource,fragmentShaderSource);
     glUseProgram(shaderProgram);
     LOGI("program init");
 }
 void on_surface_created(){
-    LOGI("on_surface_created");
     glClearColor(0.0f,0.0f,0.0f,1.0f);
 }
 void on_surface_changed(float width,float height){
-    LOGI("on_surface_changed");
     ProjectionMatrix = glm::perspective(glm::radians(45.0f), width/height, 0.1f, 100.0f);
 }
 
 void on_draw(){
-    LOGI("on_draw");
     glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
     ModelMatrix = glm::rotate(ModelMatrix,glm::degrees(0.0003f),glm::vec3(0.0f,0.0f,1.0f));
     glm::mat4 MVP = ProjectionMatrix * ViewMatrix *  ModelMatrix;
+
     GLint MVP_Handle = glGetUniformLocation(shaderProgram, "MVP");
+
     glUniformMatrix4fv(MVP_Handle, 1, GL_FALSE, glm::value_ptr(MVP));
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, vVertices);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, vColors);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 
 
 extern "C" {
-    JNIEXPORT void JNICALL Java_com_example_hellojni_NativeRenderer_init(JNIEnv *env, jclass type, jobject assetManager) {
+JNIEXPORT void JNICALL Java_com_example_hellojni_NativeRenderer_init(JNIEnv *env, jclass type, jobject assetManager) {
         AAssetManager *nativeAssetManager = AAssetManager_fromJava(env, assetManager);
         init(nativeAssetManager);
     }
@@ -145,5 +168,9 @@ extern "C" {
 
     JNIEXPORT void JNICALL Java_com_example_hellojni_NativeRenderer_on_1draw_1frame(JNIEnv *env, jclass type) {
         on_draw();
+    }
+    JNIEXPORT void JNICALL
+    Java_com_example_hellojni_NativeRenderer_clean(JNIEnv *env, jclass type) {
+        clean();
     }
 }

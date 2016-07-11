@@ -13,4 +13,6 @@ public class NativeRenderer{
     public static native void on_draw_frame();
 
     public static native void init(AssetManager assetManager);
+
+    public static native void clean();
 }
