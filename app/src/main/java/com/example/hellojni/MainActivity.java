@@ -24,6 +24,7 @@ public class MainActivity extends Activity {
         glSurfaceView.setRenderer(new GLSurfaceView.Renderer() {
             @Override
             public void onSurfaceCreated(GL10 gl, EGLConfig config) {
+                NativeRenderer.init(getAssets());
                 NativeRenderer.on_surface_created();
             }
 
@@ -37,7 +38,6 @@ public class MainActivity extends Activity {
                 NativeRenderer.on_draw_frame();
             }
         });
-        NativeRenderer.init(getAssets());
         rendererSet = true;
         setContentView(glSurfaceView);
     }

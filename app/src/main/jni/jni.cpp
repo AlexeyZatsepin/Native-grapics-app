@@ -3,49 +3,44 @@
 #include <android/asset_manager_jni.h>
 #include <string>
 #include <assert.h>
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include <vector>
+#include <android/log.h>
 
+#define  LOG_TAG    "opengl_test"
+#define  LOGI(...)  __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
-const GLfloat vVertices[] = {
-        -1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-//
-        0.0f,1.0f,1.0f, 0.0f, 0.0f,
-        1.0f,1.0f, 0.0f, 1.0f, 0.0f,
-        1.0f,0.0f, 0.0f, 0.0f, 1.0f,
-//
-        1.0f,0.0f,1.0f, 0.0f, 0.0f,
-        1.0f,-1.0f, 0.0f, 1.0f, 0.0f,
-        0.0f,-1.0f, 0.0f, 0.0f, 1.0f,
-//
-        0.0f,-1.0f,1.0f, 0.0f, 0.0f,
-        -1.0f,-1.0f, 0.0f, 1.0f, 0.0f,
-        -1.0f, 0.0f,0.0f, 0.0f, 1.0f,
+using std::string;
 
-        //line
-        -1.0f, -1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-
-        -1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-        1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
-
-        0.0f, 0.5f, 0.0f, 0.0f, 1.0f,
-        0.5f, 0.0f ,0.0f, 0.0f, 1.0f,
-        0.0f ,-0.5f,0.0f, 0.0f, 1.0f,
-        -0.5f, 0.0f ,0.0f, 0.0f, 1.0f,
+GLfloat vVertices[] = {
+        0.0f, 0.5f, 0.0f,
+        -0.5f, -0.5f, 0.0f,
+        0.5f,-0.5f, 0.0f
+};
+GLfloat vColors[] = {
+        1.0f,1.0f,0.0f,
+        0.0f,1.0f,0.0f,
+        0.0f,0.0f,1.0f
 };
 
 
-struct Renderer {
-    std::string vertexShaderSource;
-    std::string fragmentShaderSource;
+std::string vertexShaderSource;
+std::string fragmentShaderSource;
 
-    GLuint shaderProgram;
-    GLuint aPositionLocation;
-    GLuint aColorLocation;
+GLuint shaderProgram;
 
-    public:
-    void init(AAssetManager *assetManager) {
+glm::mat4 ProjectionMatrix;
+glm::mat4 ViewMatrix = glm::lookAt(
+            glm::vec3(0.0f, 0.0f, 5.0f),
+            glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3(0.0f, 1.0f, 0.0f)
+);
+glm::mat4 ModelMatrix = glm::mat4(1.0);
+
+void loadSources(AAssetManager *assetManager) {
         AAsset *vertexShaderAsset = AAssetManager_open(assetManager, "vertex_shader.glsl",
                                                        AASSET_MODE_BUFFER);
         assert(vertexShaderAsset != NULL);
@@ -55,7 +50,7 @@ struct Renderer {
         vertexShaderSource = std::string((const char*)vertexShaderBuf,
                                          (size_t)vertexShaderLength);
         AAsset_close(vertexShaderAsset);
-
+        LOGI("vertex shader source loaded");
         AAsset *fragmentShaderAsset = AAssetManager_open(assetManager, "fragment_shader.glsl",
                                                          AASSET_MODE_BUFFER);
         assert(fragmentShaderAsset != NULL);
@@ -65,33 +60,23 @@ struct Renderer {
         fragmentShaderSource = std::string((const char*)fragmentShaderBuf,
                                            (size_t)fragmentShaderLength);
         AAsset_close(fragmentShaderAsset);
+        LOGI("fragment shader source loaded");
+}
 
-        glUseProgram(shaderProgram);
+GLuint loadShader(GLenum shaderType, const std::string& pSource) {
+        GLuint shader = glCreateShader(shaderType);
+        assert(shader != 0);
+        const char *sourceBuf = pSource.c_str();
+        glShaderSource(shader, 1, &sourceBuf, NULL);
+        glCompileShader(shader);
+        GLint shaderCompiled;
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &shaderCompiled);
+        assert(shaderCompiled != 0);
+        LOGI("shader loaded");
+        return shader;
+}
 
-        glVertexAttribPointer(aPositionLocation, 2, GL_FLOAT, (GLboolean) false, 20, vVertices);
-        glEnableVertexAttribArray(aPositionLocation);
-
-
-        glVertexAttribPointer(aColorLocation, 3, GL_FLOAT, (GLboolean) false, 20, vVertices);
-        glEnableVertexAttribArray(aColorLocation);
-
-    }
-
-    void surfaceCreated() {
-        shaderProgram = createProgram(vertexShaderSource, fragmentShaderSource);
-        assert(shaderProgram != 0);
-        aPositionLocation = (GLuint)glGetAttribLocation(shaderProgram, "a_Position");
-        assert(aPositionLocation != -1);
-        aColorLocation = (GLuint)glGetAttribLocation(shaderProgram, "a_Color");
-        assert(aColorLocation != -1);
-    }
-
-    void surfaceChanged(int w, int h) {
-        glViewport(0, 0, w, h);
-    }
-
-
-    GLuint createProgram(const std::string& pVertexSource, const std::string& pFragmentSource) {
+GLuint createProgram(const std::string& pVertexSource, const std::string& pFragmentSource) {
         GLuint vertexShader = loadShader(GL_VERTEX_SHADER, pVertexSource);
         GLuint pixelShader = loadShader(GL_FRAGMENT_SHADER, pFragmentSource);
         GLuint program = glCreateProgram();
@@ -104,63 +89,61 @@ struct Renderer {
         assert(programLinked != 0);
         glDeleteShader(vertexShader);
         glDeleteShader(pixelShader);
+        LOGI("program created");
         return program;
-    }
-
-    GLuint loadShader(GLenum shaderType, const std::string& pSource) {
-        GLuint shader = glCreateShader(shaderType);
-        assert(shader != 0);
-        const char *sourceBuf = pSource.c_str();
-        glShaderSource(shader, 1, &sourceBuf, NULL);
-        glCompileShader(shader);
-        GLint shaderCompiled;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &shaderCompiled);
-        assert(shaderCompiled != 0);
-        return shader;
-    }
+}
 
 
-    void render() {
-        glClearColor(0.f, 0.f, 0.f, 0.0f);
-        glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+void init(AAssetManager *nativeAssetManager){
+    loadSources(nativeAssetManager);
+    shaderProgram = createProgram(vertexShaderSource,fragmentShaderSource);
+    glUseProgram(shaderProgram);
+    LOGI("program init");
+}
+void on_surface_created(){
+    LOGI("on_surface_created");
+    glClearColor(0.0f,0.0f,0.0f,1.0f);
+}
+void on_surface_changed(float width,float height){
+    LOGI("on_surface_changed");
+    ProjectionMatrix = glm::perspective(glm::radians(45.0f), width/height, 0.1f, 100.0f);
+}
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glDrawArrays(GL_TRIANGLES, 3, 3);
-        glDrawArrays(GL_TRIANGLES, 6, 3);
-        glDrawArrays(GL_TRIANGLES, 9, 3);
+void on_draw(){
+    LOGI("on_draw");
+    glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
-//        glDrawArrays(GL_TRIANGLES, 0, 12);
-        glLineWidth(12);
+    ModelMatrix = glm::rotate(ModelMatrix,glm::degrees(0.0003f),glm::vec3(0.0f,0.0f,1.0f));
+    glm::mat4 MVP = ProjectionMatrix * ViewMatrix *  ModelMatrix;
+    GLint MVP_Handle = glGetUniformLocation(shaderProgram, "MVP");
+    glUniformMatrix4fv(MVP_Handle, 1, GL_FALSE, glm::value_ptr(MVP));
 
-        glDrawArrays(GL_LINES, 12, 2);
-        glDrawArrays(GL_LINES, 14, 2);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, vVertices);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, vColors);
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+}
 
-        glDrawArrays(GL_POINTS,16,4);
 
 
-    }
-
-};
 extern "C" {
-
-    Renderer renderer;
-
     JNIEXPORT void JNICALL Java_com_example_hellojni_NativeRenderer_init(JNIEnv *env, jclass type, jobject assetManager) {
         AAssetManager *nativeAssetManager = AAssetManager_fromJava(env, assetManager);
-        renderer.init(nativeAssetManager);
+        init(nativeAssetManager);
     }
 
     JNIEXPORT void JNICALL Java_com_example_hellojni_NativeRenderer_on_1surface_1created(JNIEnv *env, jclass type) {
-        renderer.surfaceCreated();
-
+        on_surface_created();
     }
 
     JNIEXPORT void JNICALL Java_com_example_hellojni_NativeRenderer_on_1surface_1changed(JNIEnv *env, jclass type, jint width, jint height) {
-        renderer.surfaceChanged(width,height);
+        float fwidth = width;
+        float fheight = height;
+        on_surface_changed(fwidth,fheight);
     }
 
     JNIEXPORT void JNICALL Java_com_example_hellojni_NativeRenderer_on_1draw_1frame(JNIEnv *env, jclass type) {
-        renderer.render();
+        on_draw();
     }
-
 }

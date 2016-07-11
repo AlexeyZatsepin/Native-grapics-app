@@ -16,7 +16,9 @@ model {
             toolchain = 'clang'
             stl        = 'gnustl_static'
             // abiFilters.addAll(['armeabi','armeabi-v7a', 'arm64-v8a', 'x86', 'x86-64'])
-            cppFlags.addAll(['-std=c++11','-Wall'])
+            cppFlags.addAll(['-std=c++11','-Wall', // glm could not take -Wall -Werror
+                             '-D GLM_FORCE_SIZE_T_LENGTH', '-D GLM_FORCE_RADIANS',
+                             '-I' + file('src/main/jni')])
             ldLibs.addAll([ 'android', 'log', 'GLESv2'])
         }
 

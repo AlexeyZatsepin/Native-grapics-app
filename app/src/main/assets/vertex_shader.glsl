@@ -1,13 +1,12 @@
 #version 100
-attribute vec4 a_Position;
-attribute vec4 a_Color;
+attribute vec3 vertexCoords;
+attribute vec3 vertexColor;
 
-varying vec4 v_Color;
+uniform mat4 MVP;
 
-void main() {
+varying vec3 fColor;
 
-    gl_Position = a_Position;
-    gl_PointSize = 10.0;
-
-    v_Color = a_Color;
+void main(){
+    gl_Position = MVP * vec4(vertexCoords,1.0);
+    fColor = vertexColor;
 }
