@@ -1,6 +1,6 @@
 package com.example.hellojni;
 
-import android.app.NativeActivity;
+
 import android.support.v7.app.AppCompatActivity;
 import android.opengl.GLSurfaceView;
 import android.os.Build;
@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         glSurfaceView.onPause();
-        NativeRenderer.clean();
+        //NativeRenderer.clean();
 
     }
 
@@ -56,13 +56,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         glSurfaceView.onResume();
-        NativeRenderer.init(getAssets());
+        //NativeRenderer.init(getAssets());
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        NativeRenderer.clean();
+        //NativeRenderer.clean();
     }
 
     @Override
