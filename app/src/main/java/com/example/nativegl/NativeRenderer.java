@@ -1,4 +1,4 @@
-package com.example.hellojni;
+package com.example.nativegl;
 
 import android.content.res.AssetManager;
 
