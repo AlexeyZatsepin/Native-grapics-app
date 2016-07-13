@@ -16,35 +16,56 @@ import javax.microedition.khronos.opengles.GL10;
 public class MainActivity extends AppCompatActivity {
     private final String TAG = "CurrView";
     private GLSurfaceView glSurfaceView;
-//    public enum Views{
-//        main, reverse
-//    }
-//    Views view;
+    public enum Views{
+        main,reverse, model
+    }
+    Views view;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         glSurfaceView = new GLSurfaceView(this);
-//        view = (Views) getIntent().getSerializableExtra(TAG);
-//        if (view == null) view = Views.main;
+        view = (Views) getIntent().getSerializableExtra(TAG);
+        if (view == null) view = Views.main;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.FROYO) {
             glSurfaceView.setEGLContextClientVersion(2);
         }
         glSurfaceView.setRenderer(new GLSurfaceView.Renderer() {
             @Override
             public void onSurfaceCreated(GL10 gl, EGLConfig config) {
-                NativeRenderer.init(getAssets());
-                NativeRenderer.on_surface_created();
+                if(view==Views.main){
+                    NativeRenderer.init(getAssets());
+                    NativeRenderer.on_surface_created();
+                }else if(view== Views.model){
+                    NativeRenderer.model_init(getAssets());
+                    NativeRenderer.model_on_surface_created();
+                }else if(view== Views.reverse){
+                    NativeRenderer.r_init(getAssets());
+                    NativeRenderer.r_on_surface_created();
+                }
             }
 
             @Override
             public void onSurfaceChanged(GL10 gl, int width, int height) {
-                NativeRenderer.on_surface_changed(width,height);
+                if(view==Views.main){
+                    NativeRenderer.on_surface_changed(width,height);
+                }else if(view== Views.model) {
+                    NativeRenderer.model_on_surface_changed(width,height);
+                }else if(view== Views.reverse) {
+                    NativeRenderer.r_on_surface_changed(width,height);
+                }
             }
 
             @Override
             public void onDrawFrame(GL10 gl) {
-                NativeRenderer.on_draw_frame();
+                if(view==Views.main){
+                    NativeRenderer.on_draw_frame();
+                }else if(view== Views.model) {
+                    NativeRenderer.model_on_draw_frame();
+                }else if(view== Views.reverse) {
+                    NativeRenderer.r_on_draw_frame();
+                }
+
             }
         });
         setContentView(glSurfaceView);
@@ -68,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        NativeRenderer.clean();
+        if(view==Views.main) NativeRenderer.clean();
     }
 
     @Override
@@ -80,15 +101,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-//        if (id == R.id.main) {
-//            view = Views.main;
-//        }else if(id==R.id.reverse){
-//            view = Views.reverse;
-//        }
-//        Intent intent = getIntent();
-//        intent.putExtra(TAG, view);
-//        finish();
-//        startActivity(intent);
+        if (id == R.id.main) {
+            view = Views.main;
+        }else if(id==R.id.reverse){
+            view = Views.reverse;
+        }else if(id==R.id.model){
+            view = Views.model;
+        }
+        Intent intent = getIntent();
+        intent.putExtra(TAG, view);
+        finish();
+        startActivity(intent);
         return super.onOptionsItemSelected(item);
     }
 

@@ -3,4 +3,5 @@
     <string name="app_name">Native Test GLES</string>
     <string name="main">main</string>
     <string name="reverse">reverse</string>
+    <string name="model">model</string>
 </resources>

@@ -15,4 +15,21 @@ public class NativeRenderer{
     public static native void init(AssetManager assetManager);
 
     public static native void clean();
+
+    public static native void r_on_surface_created();
+
+    public static native void r_on_surface_changed(int width, int height);
+
+    public static native void r_on_draw_frame();
+
+    public static native void r_init(AssetManager assetManager);
+
+    public static native void model_on_surface_created();
+
+    public static native void model_on_surface_changed(int width, int height);
+
+    public static native void model_on_draw_frame();
+
+    public static native void model_init(AssetManager assetManager);
+
 }

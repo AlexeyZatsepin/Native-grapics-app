@@ -11,4 +11,8 @@
         android:title="@string/reverse"
         android:orderInCategory="100"
         app:showAsAction="never"/>
+    <item android:id="@+id/model"
+        android:title="@string/model"
+        android:orderInCategory="100"
+        app:showAsAction="never"/>
 </menu>
